@@ -1,0 +1,35 @@
+{
+  "owner": "Ronaldo",
+  "notify_mac": true,
+  "audio": {
+    "rate": 44100,
+    "chunk": 1024,
+    "threshold_multiplier": 3.5,
+    "baseline_frames": 30,
+    "min_gap_between_claps": 0.15,
+    "max_gap_double_clap": 1.0,
+    "max_gap_triple_clap": 0.8,
+    "max_gap_quad_clap": 0.8,
+    "startup_delay": 5.0,
+    "min_threshold": 3000
+  },
+  "location": {
+    "latitude": 0,
+    "longitude": 0,
+    "city": ""
+  },
+  "music": {
+    "playlist_morning": "Canciones favoritas",
+    "playlist_afternoon": "Canciones favoritas",
+    "playlist_evening": "Canciones favoritas",
+    "playlist_night": "Canciones favoritas"
+  },
+  "tts": {
+    "engine": "kokoro",
+    "kokoro_model": "kokoro-v1.0.onnx",
+    "kokoro_voices": "voices-v1.0.bin",
+    "voice": "ef_dora",
+    "speed": 1.0,
+    "lang": "es"
+  }
+}

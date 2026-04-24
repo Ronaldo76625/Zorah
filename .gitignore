@@ -1,0 +1,10 @@
+# Archivos del sistema Mac
+.DS_Store
+
+# Modelos de IA (Demasiado pesados para GitHub)
+*.onnx
+*.bin
+
+# Entornos virtuales de Python
+venv/
+__pycache__/
