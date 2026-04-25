@@ -11,7 +11,7 @@
     "max_gap_triple_clap": 0.8,
     "max_gap_quad_clap": 0.8,
     "startup_delay": 5.0,
-    "min_threshold": 3000
+    "min_threshold": 6500
   },
   "location": {
     "latitude": 21.1619,
@@ -20,8 +20,8 @@
   },
   "music": {
     "playlist_morning": "Canciones favoritas",
-    "playlist_afternoon": "Canciones favoritas",
-    "playlist_evening": "Canciones favoritas",
+    "playlist_afternoon": "Quevedo Essentials",
+    "playlist_evening": "Babuni chill",
     "playlist_night": "Canciones favoritas"
   },
   "tts": {

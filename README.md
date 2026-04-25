@@ -10,12 +10,12 @@ Zora es un asistente virtual 100% local y de código abierto diseñado para macO
 
 Zora calibra el ruido ambiental automáticamente al iniciar y se queda escuchando en segundo plano.
 
-| Aplausos | Acción                                         |
-|----------|------------------------------------------------|
-| **2**    | Despertar + Reporte del clima + Iniciar música |
-| **3**    | Pausar / Reanudar la música actual             |
-| **4**    | Subir volumen de la Mac                        |
-| **5**    | Bajar volumen de la Mac                        |
+| Aplausos  | Acción                                                               |
+|-----------|----------------------------------------------------------------------|
+| **2**     | Despertar + Reporte del clima + Iniciar música (Solo la primera vez) |
+| **2**     | Pausar / Reanudar la música actual                                   |
+| **3**     | Apagar                                                               |
+
 
 ---
 
@@ -54,13 +54,14 @@ Para que Zora pueda hablar, necesitas descargar los archivos del modelo de lengu
 ### 3. Estructura final del proyecto
 
 Tu carpeta principal debería verse exactamente así antes de ejecutar a Zora:
-Zora/
-├── detector.py
-├── config.json
-├── Iniciar_Zora.command
-├── kokoro-v1.0.onnx
-└── voices-v1.0.bin
-
+> ```bash
+> Zora/
+>  ├── detector.py
+>  ├── config.json
+>  ├── Iniciar_Zora.command
+>  ├── kokoro-v1.0.onnx
+>  └── voices-v1.0.bin
+> ```
 ---
 
 ## Configuración (`config.json`)
