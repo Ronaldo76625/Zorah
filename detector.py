@@ -24,7 +24,7 @@ DEFAULT_CONFIG = {
         "startup_delay": 5.0,
         "min_threshold": 3000,
     },
-    "location": {"latitude": 0, "longitude": 0, "city": ""},
+    "location": {"latitude": 209, "longitude": -86.8515, "city": "Cancún"},
     "music": {
         "playlist_morning": "Canciones favoritas",
         "playlist_afternoon": "Canciones favoritas",
@@ -184,44 +184,48 @@ def saludo_por_hora() -> str:
         return f"Buenas noches {nombre}"
 
 
-def ejecutar_gesto(cantidad: int, estado: dict):
+def ejecutar_gesto(cantidad: int, estado: dict) -> bool:
+    """
+    Ejecuta la acción correspondiente a la cantidad de aplausos.
+    Devuelve True si el programa debe seguir corriendo, False si debe apagarse.
+    """
     if cantidad == 2:
-        print("\n[gesto] Doble aplauso → despertar\n")
-        reporte_clima = obtener_clima()
-        saludo = saludo_por_hora()
-        frase = f"{saludo}. Hoy {reporte_clima}. Enseguida pongo tu música."
-        notificar("Zora despertó", reporte_clima)
-        hablar(frase)
-        reproducir_musica()
+        if not estado["saludado"]:
+            print("\n[gesto] Doble aplauso → despertar\n")
+            reporte_clima = obtener_clima()
+            saludo = saludo_por_hora()
+            frase = f"{saludo}. Hoy {reporte_clima}. Enseguida pongo tu música."
+            notificar("Zora despertó", reporte_clima)
+            hablar(frase)
+            reproducir_musica()
+            estado["saludado"] = True
+            estado["reproduciendo"] = True
+        else:
+            if estado.get("reproduciendo", False):
+                print("\n[gesto] Doble aplauso → pausar\n")
+                pausar_musica()
+                hablar("Pausando la música.")
+                notificar("Zora", "Música pausada")
+                estado["reproduciendo"] = False
+            else:
+                print("\n[gesto] Doble aplauso → reanudar\n")
+                reanudar_musica()
+                hablar("Reanudando.")
+                notificar("Zora", "Música reanudada")
+                estado["reproduciendo"] = True
+        return True
 
     elif cantidad == 3:
+        print("\n[gesto] Triple aplauso → apagar Zora\n")
+        # Opcional: pausar la música antes de irse
         if estado.get("reproduciendo", False):
-            print("\n[gesto] Triple aplauso → pausar\n")
             pausar_musica()
-            hablar("Pausando la música.")
-            notificar("Zora", "Música pausada")
-            estado["reproduciendo"] = False
-        else:
-            print("\n[gesto] Triple aplauso → reanudar\n")
-            reanudar_musica()
-            hablar("Reanudando.")
-            notificar("Zora", "Música reanudada")
-            estado["reproduciendo"] = True
+        hablar("Apagando sistema. Hasta luego.")
+        notificar("Zora", "Desconectada")
+        return False  # Esta es la señal para romper el ciclo principal
 
-    elif cantidad == 4:
-        print("\n[gesto] Cuádruple aplauso → subir volumen\n")
-        cambiar_volumen(subir=True)
-        hablar("Subiendo el volumen.")
-        notificar("Zora", "Volumen ↑")
-
-    elif cantidad == 5:
-        print("\n[gesto] Quíntuple aplauso → bajar volumen\n")
-        cambiar_volumen(subir=False)
-        hablar("Bajando el volumen.")
-        notificar("Zora", "Volumen ↓")
-
-    else:
-        print(f"[gesto] {cantidad} aplausos — sin acción asignada")
+    # Si detecta 4 o 5 aplausos en el futuro, los puedes manejar aquí
+    return True
 
 
 def rms(data_bytes: bytes, chunk: int) -> float:
@@ -269,7 +273,7 @@ def main():
 
     print(f"[calibración] Ruido base: {int(ruido_base)} | Umbral final: {int(umbral)}")
 
-    estado = {"reproduciendo": False}
+    estado = {"reproduciendo": False, "saludado": False}
     aplausos_detectados = 0
     ultimo_aplauso_tiempo = 0.0
     primer_aplauso_tiempo = 0.0
@@ -297,7 +301,8 @@ def main():
                     ventana = cfg_a["max_gap_double_clap"]
                     if ahora - primer_aplauso_tiempo > ventana:
                         if aplausos_detectados >= 2:
-                            ejecutar_gesto(aplausos_detectados, estado)
+                            if not ejecutar_gesto(aplausos_detectados, estado):
+                                break
                         else:
                             print("[aplauso] Solo uno detectado, ignorando")
                         aplausos_detectados = 0

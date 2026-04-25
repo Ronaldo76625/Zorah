@@ -14,9 +14,9 @@
     "min_threshold": 3000
   },
   "location": {
-    "latitude": 0,
-    "longitude": 0,
-    "city": ""
+    "latitude": 21.1619,
+    "longitude": -86.8515,
+    "city": "Cancún"
   },
   "music": {
     "playlist_morning": "Canciones favoritas",
