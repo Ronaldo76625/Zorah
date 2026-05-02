@@ -246,12 +246,11 @@ def main():
     )
 
     print("=" * 40)
-    print("  Zora está escuchando...           ")
-    print("  2 aplausos → despertar + música   ")
-    print("  3 aplausos → pausar / reanudar    ")
-    print("  4 aplausos → subir volumen        ")
-    print("  5 aplausos → bajar volumen        ")
-    print("  Ctrl+C para detener               ")
+    print("  Zora está escuchando...          ")
+    print("  2 aplausos → despertar + música  ")
+    print("  2 aplausos → pausar / reanudar   ")
+    print("  3 aplausos → apagar / detener    ")
+    print("  Ctrl+C para detener              ")
     print("=" * 40)
 
     espera = cfg_a.get("startup_delay", 5.0)
