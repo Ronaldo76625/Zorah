@@ -8,3 +8,7 @@
 # Entornos virtuales de Python
 venv/
 __pycache__/
+
+# Compilación local de la app macOS
+.build/
+dist/

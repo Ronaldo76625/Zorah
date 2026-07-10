@@ -1,99 +1,129 @@
-# Zora — Asistente de voz por aplausos (v0.1)
+# Zorah
 
-**Creado por:** Ronaldo de Posada Plaza
+![Icono de Zorah](Assets/AppIcon.png)
 
-Zora es un asistente virtual 100% local y de código abierto diseñado para macOS (optimizado para Apple Silicon). Se activa mediante aplausos, no requiere conexión a internet para el procesamiento de voz y se integra de forma nativa con el sistema operativo para controlar la música y el volumen.
+Zorah es un asistente privado y de código abierto para macOS. Vive en la barra
+de menú, responde a gestos sonoros y ofrece transcripción y traducción mediante
+los frameworks nativos de Apple.
 
----
+> Proyecto no oficial creado por fans. No está afiliado, patrocinado ni
+> respaldado por Capcom.
 
-## Gestos disponibles
+## Funciones
 
-Zora calibra el ruido ambiental automáticamente al iniciar y se queda escuchando en segundo plano.
+- Aplicación SwiftUI de barra de menú.
+- Transcripción desde el micrófono con Speech.
+- Traducción local con Translation.
+- Español, inglés, francés, alemán, italiano y portugués.
+- Detección nativa de doble, triple y cuádruple aplauso.
+- Control de Apple Music y consulta del clima.
+- Atajo global `⌥⌘T` para comenzar o detener la transcripción.
+- Lectura en voz alta y copia al portapapeles.
+- Historial local opcional, desactivado por defecto.
+- Configuración de privacidad, sensibilidad, ubicación y playlists.
 
-| Aplausos  | Acción                                                               |
-|-----------|----------------------------------------------------------------------|
-| **2**     | Despertar + Reporte del clima + Iniciar música (Solo la primera vez) |
-| **2**     | Pausar / Reanudar la música actual                                   |
-| **3**     | Apagar                                                               |
+## Requisitos
 
+- Mac con Apple Silicon.
+- macOS 15 o posterior.
+- Conexión a Internet para el clima y la descarga inicial de idiomas.
 
----
+La aplicación nativa no necesita Python, Kokoro ni los modelos ONNX del
+prototipo original.
 
-## Instalación
+## Instalar desde un DMG
 
-Sigue estos pasos para instalar a Zora en tu Mac.
+1. Descarga `Zorah-<versión>-arm64.dmg` desde GitHub Releases.
+2. Abre el DMG.
+3. Arrastra `Zorah.app` a `Applications`.
+4. Abre Zorah desde Aplicaciones y busca su icono en la barra de menú.
+5. Autoriza micrófono, reconocimiento de voz y control de Apple Music cuando
+   macOS lo solicite.
 
-### 1. Requisitos previos y dependencias
+Las compilaciones comunitarias actuales usan firma local y no están
+notarizadas. Gatekeeper puede impedir el primer inicio. En ese caso, haz clic
+derecho sobre Zorah, selecciona **Abrir** y confirma la apertura. También puedes
+autorizarla desde **Ajustes del Sistema > Privacidad y seguridad**.
 
-Asegúrate de tener Python instalado. Abre tu terminal y ejecuta los siguientes comandos para instalar las librerías necesarias:
+## Construir desde el código
 
-```bash
-pip install pyaudio requests numpy kokoro-onnx sounddevice
-```
-
-> **Nota para usuarios de macOS:** Si la instalación de `pyaudio` falla, necesitas instalar el motor de audio del sistema primero usando Homebrew:
-> ```bash
-> brew install portaudio
-> pip install pyaudio
-> ```
-
----
-
-### 2. Motor de Voz: Kokoro TTS (Gratis y Local)
-
-Zora utiliza **Kokoro ONNX**, un sintetizador de voz neuronal increíblemente ligero y rápido que corre de manera nativa en tu Mac.
-
-Para que Zora pueda hablar, necesitas descargar los archivos del modelo de lenguaje y colocarlos en la carpeta principal de tu proyecto:
-
-1. Descarga el modelo principal (`kokoro-v1.0.onnx`).
-2. Descarga el paquete de voces (`voices-v1.0.bin`).
-3. Guarda ambos archivos en la misma carpeta donde está `detector.py`.
-
----
-
-### 3. Estructura final del proyecto
-
-Tu carpeta principal debería verse exactamente así antes de ejecutar a Zora:
-> ```bash
-> Zora/
->  ├── detector.py
->  ├── config.json
->  ├── Iniciar_Zora.command
->  ├── kokoro-v1.0.onnx
->  └── voices-v1.0.bin
-> ```
----
-
-## Configuración (`config.json`)
-
-Al ejecutar el proyecto por primera vez, se generará (o puedes crear/editar) un archivo `config.json`. Puedes personalizar Zora a tu gusto:
-
-- **`owner`**: Tu nombre (Zora lo usará para saludarte).
-- **`location`**: Cambia la latitud, longitud y ciudad para que el reporte del clima sea exacto a tu ubicación actual.
-- **`music`**: Cambia los nombres por las playlists exactas que tengas en Apple Music, divididas por momento del día (mañana, tarde, noche).
-- **`audio`**:
-  - `startup_delay`: Tiempo en segundos que Zora espera al abrirse para que el micrófono de la Mac "despierte".
-  - `min_threshold`: Volumen mínimo (ej. `3000`) para que un sonido sea considerado un aplauso.
-  - `threshold_multiplier`: Multiplicador del ruido base. Súbelo si Zora se activa con ruidos falsos; bájalo si no te escucha bien.
-- **`tts`**: Verifica que `"voice"` esté configurado con la voz que prefieras (por defecto `"ef_dora"`).
-
----
-
-## Cómo iniciar a Zora
-
-Simplemente ejecuta el script principal desde tu terminal:
+Requiere Swift y las Command Line Tools de Apple.
 
 ```bash
-python detector.py
+./script/build_and_run.sh
 ```
 
-> **Opcional:** Puedes crear un ejecutable `.command` en tu escritorio para iniciar a Zora con un doble clic.
+El comando construye `dist/Zorah.app` y abre la utilidad en la barra de menú.
+Para verificar Swift y las pruebas del detector legado:
 
----
+```bash
+./script/check.sh
+```
 
-## Próximos pasos (Roadmap)
+## Crear el paquete de distribución
 
-- [ ] Integración de modo voz con OpenAI Whisper (STT local, gratis).
-- [ ] Comandos conversacionales por voz con modelos LLM.
-- [ ] Control de luces inteligentes (Home Assistant).
-- [ ] Modo "no molestar" automatizado por horario.
+```bash
+./script/package_release.sh
+```
+
+El script genera dentro de `dist/`:
+
+```text
+Zorah.app
+Zorah-0.1.0-arm64.dmg
+Zorah-0.1.0-arm64.dmg.sha256
+```
+
+El DMG contiene `Zorah.app` y un acceso directo a `/Applications`. `dist/` está
+ignorado por Git: adjunta el DMG y su checksum manualmente a una GitHub Release
+en lugar de añadirlos al repositorio.
+
+Para producir otra versión:
+
+```bash
+VERSION=0.2.0 ./script/package_release.sh
+```
+
+## Privacidad
+
+- Zorah no conserva grabaciones de audio.
+- El historial de traducciones está desactivado por defecto.
+- La transcripción puede configurarse para exigir procesamiento local.
+- Translation procesa en el dispositivo los idiomas instalados.
+- El clima consulta Open-Meteo y necesita Internet.
+- Apple puede requerir descargas adicionales para voz y traducción.
+
+## Detector Python legado
+
+El prototipo original continúa disponible como referencia en `detector.py`.
+Para ejecutarlo:
+
+```bash
+python3 -m pip install -r requirements.txt
+python3 detector.py
+```
+
+Kokoro necesita `kokoro-v1.0.onnx` y `voices-v1.0.bin` en la raíz del proyecto.
+Si no puede cargarse, el prototipo utiliza la voz del sistema.
+
+## Contribuir
+
+Consulta [CONTRIBUTING.md](CONTRIBUTING.md) antes de abrir un pull request.
+Los errores, propuestas y mejoras son bienvenidos.
+
+## Licencia y recursos
+
+El código y la documentación original se distribuyen bajo la
+[licencia MIT](LICENSE).
+
+El icono representa a Zorah Magdaros, personaje de Monster Hunter. Ese nombre,
+personaje y la ilustración no están cubiertos por la licencia MIT. El proyecto
+no concede derechos sobre recursos propiedad de Capcom o de terceros. Consulta
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+## Roadmap
+
+- Acciones configurables para cada gesto.
+- Inicio automático con macOS.
+- Pruebas adicionales de audio, permisos y traducción sin conexión.
+- Distribución universal para Apple Silicon e Intel.

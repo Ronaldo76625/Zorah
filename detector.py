@@ -1,12 +1,12 @@
+import copy
 import json
 import math
-import os
+import subprocess
 import struct
 import time
 from datetime import datetime
 from pathlib import Path
 
-import pyaudio
 import requests
 
 CONFIG_PATH = Path(__file__).parent / "config.json"
@@ -24,7 +24,7 @@ DEFAULT_CONFIG = {
         "startup_delay": 5.0,
         "min_threshold": 3000,
     },
-    "location": {"latitude": 209, "longitude": -86.8515, "city": "Cancún"},
+    "location": {"latitude": 21.1619, "longitude": -86.8515, "city": "Cancún"},
     "music": {
         "playlist_morning": "Canciones favoritas",
         "playlist_afternoon": "Canciones favoritas",
@@ -48,7 +48,7 @@ def load_config() -> dict:
     if CONFIG_PATH.exists():
         with open(CONFIG_PATH) as f:
             saved = json.load(f)
-        merged = DEFAULT_CONFIG.copy()
+        merged = copy.deepcopy(DEFAULT_CONFIG)
         for key, val in saved.items():
             if isinstance(val, dict) and key in merged:
                 merged[key].update(val)
@@ -58,7 +58,7 @@ def load_config() -> dict:
     else:
         with open(CONFIG_PATH, "w") as f:
             json.dump(DEFAULT_CONFIG, f, indent=2, ensure_ascii=False)
-        return DEFAULT_CONFIG
+        return copy.deepcopy(DEFAULT_CONFIG)
 
 
 CFG = load_config()
@@ -76,8 +76,8 @@ def hablar(texto: str):
 
             if kokoro_instance is None:
                 print("[tts] Cargando modelo Kokoro en memoria...")
-                model_path = CFG["tts"]["kokoro_model"]
-                voices_path = CFG["tts"]["kokoro_voices"]
+                model_path = Path(__file__).parent / CFG["tts"]["kokoro_model"]
+                voices_path = Path(__file__).parent / CFG["tts"]["kokoro_voices"]
                 kokoro_instance = Kokoro(model_path, voices_path)
 
             voice = CFG["tts"]["voice"]
@@ -94,7 +94,7 @@ def hablar(texto: str):
         except Exception as e:
             print(f"[tts] Kokoro falló ({e}), usando say como fallback")
 
-    os.system(f"say '{texto}'")
+    subprocess.run(["say", texto], check=False)
 
 
 def obtener_clima() -> str:
@@ -105,7 +105,9 @@ def obtener_clima() -> str:
             f"https://api.open-meteo.com/v1/forecast"
             f"?latitude={lat}&longitude={lon}&current_weather=true"
         )
-        resp = requests.get(url, timeout=5).json()
+        response = requests.get(url, timeout=5)
+        response.raise_for_status()
+        resp = response.json()
         temp = resp["current_weather"]["temperature"]
         codigo = resp["current_weather"]["weathercode"]
 
@@ -139,27 +141,52 @@ def obtener_playlist() -> str:
         return m["playlist_night"]
 
 
+def ejecutar_applescript(
+    script: str,
+    capturar_salida: bool = False,
+    argumentos: list[str] | None = None,
+):
+    return subprocess.run(
+        ["osascript", "-e", script, *(argumentos or [])],
+        check=False,
+        capture_output=capturar_salida,
+        text=capturar_salida,
+    )
+
+
+def estado_musica() -> str:
+    resultado = ejecutar_applescript(
+        'tell application "Music" to return player state as text',
+        capturar_salida=True,
+    )
+    return resultado.stdout.strip().lower() if resultado.returncode == 0 else "unknown"
+
+
 def reproducir_musica():
     playlist = obtener_playlist()
-    script = f'tell application "Music" to play playlist "{playlist}"'
-    os.system(f"osascript -e '{script}'")
+    script = (
+        "on run argv\n"
+        'tell application "Music" to play playlist (item 1 of argv)\n'
+        "end run"
+    )
+    ejecutar_applescript(script, argumentos=[playlist])
     print(f"[música] Reproduciendo: {playlist}")
 
 
 def pausar_musica():
-    os.system("osascript -e 'tell application \"Music\" to pause'")
+    ejecutar_applescript('tell application "Music" to pause')
     print("[música] Pausada")
 
 
 def reanudar_musica():
-    os.system("osascript -e 'tell application \"Music\" to play'")
+    ejecutar_applescript('tell application "Music" to play')
     print("[música] Reanudada")
 
 
 def cambiar_volumen(subir: bool):
     delta = 10 if subir else -10
     script = f'tell application "Music" to set sound volume to (sound volume + {delta})'
-    os.system(f"osascript -e '{script}'")
+    ejecutar_applescript(script)
     accion = "subido" if subir else "bajado"
     print(f"[música] Volumen {accion}")
 
@@ -167,10 +194,10 @@ def cambiar_volumen(subir: bool):
 def notificar(titulo: str, mensaje: str):
     if not CFG.get("notify_mac", False):
         return
-    script = (
-        f'display notification "{mensaje}" with title "Zora 🎵" subtitle "{titulo}"'
-    )
-    os.system(f"osascript -e '{script}'")
+    script = "on run argv\n" \
+        "display notification (item 2 of argv) with title \"Zorah\" subtitle (item 1 of argv)\n" \
+        "end run"
+    ejecutar_applescript(script, argumentos=[titulo, mensaje])
 
 
 def saludo_por_hora() -> str:
@@ -195,33 +222,34 @@ def ejecutar_gesto(cantidad: int, estado: dict) -> bool:
             reporte_clima = obtener_clima()
             saludo = saludo_por_hora()
             frase = f"{saludo}. Hoy {reporte_clima}. Enseguida pongo tu música."
-            notificar("Zora despertó", reporte_clima)
+            notificar("Zorah despertó", reporte_clima)
             hablar(frase)
             reproducir_musica()
             estado["saludado"] = True
-            estado["reproduciendo"] = True
+            estado["reproduciendo"] = estado_musica() == "playing"
         else:
-            if estado.get("reproduciendo", False):
+            reproduciendo = estado_musica() == "playing"
+            if reproduciendo:
                 print("\n[gesto] Doble aplauso → pausar\n")
                 pausar_musica()
                 hablar("Pausando la música.")
-                notificar("Zora", "Música pausada")
+                notificar("Zorah", "Música pausada")
                 estado["reproduciendo"] = False
             else:
                 print("\n[gesto] Doble aplauso → reanudar\n")
                 reanudar_musica()
                 hablar("Reanudando.")
-                notificar("Zora", "Música reanudada")
+                notificar("Zorah", "Música reanudada")
                 estado["reproduciendo"] = True
         return True
 
     elif cantidad == 3:
-        print("\n[gesto] Triple aplauso → apagar Zora\n")
+        print("\n[gesto] Triple aplauso → apagar Zorah\n")
         # Opcional: pausar la música antes de irse
         if estado.get("reproduciendo", False):
             pausar_musica()
         hablar("Apagando sistema. Hasta luego.")
-        notificar("Zora", "Desconectada")
+        notificar("Zorah", "Desconectada")
         return False  # Esta es la señal para romper el ciclo principal
 
     # Si detecta 4 o 5 aplausos en el futuro, los puedes manejar aquí
@@ -233,7 +261,17 @@ def rms(data_bytes: bytes, chunk: int) -> float:
     return math.sqrt(sum(x**2 for x in muestras) / chunk)
 
 
+def ventana_para_gesto(cantidad: int, config_audio: dict) -> float:
+    if cantidad >= 4:
+        return config_audio["max_gap_quad_clap"]
+    if cantidad == 3:
+        return config_audio["max_gap_triple_clap"]
+    return config_audio["max_gap_double_clap"]
+
+
 def main():
+    import pyaudio
+
     cfg_a = CFG["audio"]
     FORMAT = pyaudio.paInt16
     CHANNELS = 1
@@ -246,7 +284,7 @@ def main():
     )
 
     print("=" * 40)
-    print("  Zora está escuchando...          ")
+    print("  Zorah está escuchando...         ")
     print("  2 aplausos → despertar + música  ")
     print("  2 aplausos → pausar / reanudar   ")
     print("  3 aplausos → apagar / detener    ")
@@ -275,7 +313,6 @@ def main():
     estado = {"reproduciendo": False, "saludado": False}
     aplausos_detectados = 0
     ultimo_aplauso_tiempo = 0.0
-    primer_aplauso_tiempo = 0.0
 
     try:
         while True:
@@ -288,17 +325,14 @@ def main():
                     continue
 
                 aplausos_detectados += 1
-                if aplausos_detectados == 1:
-                    primer_aplauso_tiempo = ahora
-
                 print(f"[aplauso {aplausos_detectados}] vol={int(volumen)}")
                 ultimo_aplauso_tiempo = ahora
 
             else:
                 if aplausos_detectados > 0:
                     ahora = time.time()
-                    ventana = cfg_a["max_gap_double_clap"]
-                    if ahora - primer_aplauso_tiempo > ventana:
+                    ventana = ventana_para_gesto(aplausos_detectados, cfg_a)
+                    if ahora - ultimo_aplauso_tiempo > ventana:
                         if aplausos_detectados >= 2:
                             if not ejecutar_gesto(aplausos_detectados, estado):
                                 break
@@ -307,7 +341,7 @@ def main():
                         aplausos_detectados = 0
 
     except KeyboardInterrupt:
-        print("\n[Zora] Hasta luego.")
+        print("\n[Zorah] Hasta luego.")
 
     finally:
         stream.stop_stream()
